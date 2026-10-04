@@ -1,0 +1,33 @@
+# s2u-yt — managed yt-dlp config (installed into ~/.local/share/s2u-yt/conf/config).
+#
+# This file is applied AFTER your ~/.config/yt-dlp/config via --config-locations,
+# so anything you already have (cookies, js runtimes, ...) keeps working and this
+# file wins on any conflict.
+#
+# Client strategy (v2026-09-10 — the wrapper, not this file, picks the client):
+#
+#   P1  anonymous, NO pinned client — the wrapper strips the cookie options
+#       from your config for this pass; yt-dlp's default order applies. Its
+#       output is probed like P2's (a URL the players cannot open is not
+#       handed over; the ladder continues).
+#   P2  authenticated retry (your cookies), DASH-manifest URLs; the wrapper
+#       probes the resolved media URLs (ffprobe / plain GET) and only then hands
+#       the output to the consumer.
+#   P3  web_safari (HLS, max 1080p60) — safety net when the passes above fail
+#       or their probe sees 403s. See the SABR note below (yt-dlp #12482): some
+#       clients — including the cookie-authenticated ones and `mweb` — now
+#       return formats whose URLs are 403-dead, so HLS is the reliable floor.
+#
+# Do NOT pin `player_client` here: a pin in this file would apply to every
+# phase (and to the HLS fallback's own --extractor-args), which is what broke
+# the 2026-08-22 setup. The per-phase client is chosen by the wrapper.
+#
+# The wrapper also strips the deprecated `--youtube-skip-dash-manifest` flag
+# from consumer args: with it, yt-dlp returns player-response URLs that fail
+# googlevideo's redirect validation (302 -> 403), while DASH-manifest URLs
+# answer 206 to the same request. Verified 2026-09-09/10 (A/B 3/3, wrapper
+# runs 6/6).
+#
+# PO tokens: minted by the bgutil provider — a NATIVE node server on
+# 127.0.0.1:4416 (systemd --user unit s2u-yt-bgutil.service). Keep it running;
+# status.sh checks the port, the unit's version and a live stream URL.
